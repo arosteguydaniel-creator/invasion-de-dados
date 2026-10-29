@@ -1,0 +1,1339 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Invasión de Dados</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap">
+<style>
+/* Mismo look que el prototipo: espacio morado, paneles blancos redondeados, letra Baloo. */
+:root {
+  --espacio: #14123a;
+  --espacio-osc: #0b0a24;
+  --panel: #ffffff;
+  --crema: #f6f0ff;
+  --borde: #e2d8f5;
+  --tinta: #1b1638;
+  --suave: #5d5880;
+  --morado: #7b3fe4;
+  --morado-osc: #4c1f9e;
+  --naranja: #ff8a3d;
+  --naranja-osc: #c25a17;
+  --azul: #1e6fe0;
+  --verde: #2fae55;
+  --amarillo: #f4c20d;
+  --rojo: #e53935;
+  --lila: #b98cff;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { min-height: 100%; }
+body {
+  margin: 0;
+  font-family: "Baloo 2", system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--tinta);
+  background:
+    radial-gradient(circle at 20% 15%, rgba(255,255,255,.9) 0 1px, transparent 2px) 0 0 / 140px 140px,
+    radial-gradient(circle at 70% 60%, rgba(255,255,255,.7) 0 1px, transparent 2px) 0 0 / 190px 190px,
+    var(--espacio);
+}
+button { font: inherit; cursor: pointer; }
+button:focus-visible { outline: 3px solid var(--naranja); outline-offset: 2px; }
+
+.app {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px 24px;
+}
+header.top { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 10px; }
+.jp {
+  margin: 0; font-size: 26px; font-weight: 800; line-height: 1; color: #fff;
+  text-shadow: 0 3px 0 var(--morado-osc);
+}
+.jp span { color: var(--naranja); }
+.roundtag { font-weight: 800; font-size: 15px; color: var(--naranja); }
+.toplinks { margin-left: auto; display: flex; gap: 8px; }
+.ghost {
+  background: var(--morado); color: #fff; border: 0; border-radius: 14px;
+  font-weight: 800; font-size: 15px; padding: 6px 14px;
+  box-shadow: 0 4px 0 var(--morado-osc);
+}
+.ghost:hover { filter: brightness(1.08); }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
+.boardcol { min-width: 0; display: grid; gap: 10px; }
+.boardwrap { position: relative; width: 100%; max-width: min(100%, calc(100vh - 150px)); min-width: 0; margin: 0 auto; aspect-ratio: 1; }
+#cv { width: 100%; height: 100%; display: block; touch-action: none; border-radius: 22px; background: var(--espacio-osc); }
+
+.prompt {
+  background: var(--crema); color: var(--tinta);
+  border-radius: 18px; border-left: 8px solid var(--pc, var(--morado));
+  padding: 10px 14px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  min-height: 52px; font-weight: 700;
+  max-width: min(100%, calc(100vh - 150px)); margin: 0 auto; width: 100%;
+}
+.prompt .msg { flex: 1 1 240px; min-width: 0; }
+.prompt .msg b { color: var(--pc, var(--morado)); }
+.btn {
+  background: var(--naranja); color: #fff; border: 0; border-radius: 14px;
+  font-weight: 800; font-size: 15px; padding: 8px 16px;
+  box-shadow: 0 4px 0 var(--naranja-osc);
+}
+.btn:hover { filter: brightness(1.06); }
+.btn.alt { background: #fff; color: var(--tinta); border: 2px solid var(--borde); box-shadow: none; }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+
+aside { display: grid; gap: 10px; min-width: 0; }
+.pcard {
+  --c: var(--azul);
+  background: var(--panel); border: 3px solid transparent; border-radius: 18px;
+  padding: 10px 14px; display: grid; gap: 6px;
+}
+.pcard.cur { border-color: var(--naranja); }
+.pcard .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.chip { display: inline-block; width: 20px; height: 20px; border-radius: 6px; background: var(--c); box-shadow: inset -3px -3px 0 rgba(0,0,0,.25); flex: none; }
+.pcard .nm { font-weight: 800; font-size: 17px; }
+.pcard .kind { font-size: 13px; color: var(--suave); }
+.pcard .res { margin-left: auto; font-weight: 800; font-size: 24px; font-variant-numeric: tabular-nums; }
+.pcard .res small { font-size: 12px; color: var(--suave); margin-left: 3px; }
+.mini-track { display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); gap: 2px; align-items: center; }
+.mini-track i { height: 10px; border-radius: 3px; background: var(--crema); border: 1px solid var(--borde); }
+.mini-track i.on { background: var(--c); border-color: var(--c); }
+.mini-track i.goal { border-color: var(--naranja); }
+.stats { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 14px; color: var(--suave); font-variant-numeric: tabular-nums; }
+.stats b { color: var(--tinta); }
+
+.log {
+  background: var(--crema); border-radius: 18px; padding: 10px 14px;
+  font-size: 14px; color: var(--suave); max-height: 220px; overflow-y: auto;
+  display: grid; gap: 2px; align-content: start;
+}
+.log .t { font-weight: 800; color: var(--morado); }
+
+/* Ventanas sobre la mesa */
+.overlay {
+  position: absolute; inset: 0; border-radius: 22px;
+  background: rgba(11, 10, 36, .82);
+  display: grid; place-items: center; padding: 16px; overflow-y: auto;
+}
+.card {
+  background: var(--panel); border: 3px solid var(--morado); border-radius: 22px;
+  width: min(100%, 520px); padding: 18px 20px; display: grid; gap: 12px;
+}
+.card h2 { font-weight: 800; font-size: 26px; margin: 0; line-height: 1.1; }
+.card .eyebrow { font-weight: 800; font-size: 14px; color: var(--morado); margin: 0; }
+.card table { width: 100%; border-collapse: collapse; font-size: 15px; font-variant-numeric: tabular-nums; }
+.card td, .card th { text-align: left; padding: 5px 4px; border-bottom: 2px solid var(--crema); vertical-align: top; }
+.card th { font-size: 13px; color: var(--suave); font-weight: 700; }
+.card .num { text-align: right; }
+.card .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.shoprow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; align-items: center; border-bottom: 2px solid var(--crema); padding-bottom: 10px; }
+.shoprow .who { font-weight: 800; }
+.shoprow .det { font-size: 14px; color: var(--suave); grid-column: 1 / -1; }
+.shoprow .buys { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.shoprow .buys .btn { padding: 5px 10px; font-size: 13px; }
+
+/* Pantalla inicial */
+.setup { display: grid; gap: 14px; justify-items: center; max-width: 1000px; margin: 0 auto; padding-block: 16px; }
+.titulo {
+  margin: 8px 0 0; text-align: center; line-height: .9; color: #fff;
+  font-size: clamp(2.6rem, 11vw, 4.2rem); font-weight: 800;
+  text-shadow: 0 5px 0 var(--morado-osc), 0 0 24px rgba(123,63,228,.7);
+}
+.titulo span { color: var(--naranja); }
+.lema {
+  max-width: 460px; text-align: center; font-weight: 700; font-size: 1.15rem;
+  background: var(--morado); color: #fff; padding: 10px 16px; border-radius: 16px; margin: 0;
+}
+.setup .cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; width: 100%; }
+.setup .cols > div:first-child { background: var(--panel); border: 3px solid var(--morado); border-radius: 20px; padding: 16px; }
+.setup .sub { margin: 0 0 10px; font-weight: 800; }
+.rulesbox { background: var(--panel); border: 3px solid var(--morado); border-radius: 20px; padding: 16px; font-size: 15px; color: var(--suave); }
+.rulesbox h3, .card h3 { font-weight: 800; font-size: 16px; color: var(--morado); margin: 0 0 4px; }
+.rulesbox ol, .card ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.rulesbox b, .card ol b { color: var(--tinta); }
+.card.rules { width: min(100%, 640px); max-height: 100%; overflow-y: auto; }
+.card.rules p { margin: 0; color: var(--suave); font-size: 15px; }
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.seats { display: grid; gap: 8px; margin-bottom: 12px; }
+.seat { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 10px; align-items: center; background: var(--crema); border-radius: 14px; padding: 8px 10px; }
+.seat .chip { width: 24px; height: 24px; }
+.seat .lb { font-weight: 800; }
+.seat .lb small { display: block; font-weight: 500; color: var(--suave); font-size: 13px; }
+.seg { display: inline-flex; border: 2px solid var(--borde); border-radius: 12px; overflow: hidden; background: #fff; }
+.seg button { background: transparent; color: var(--suave); border: 0; padding: 5px 10px; font-weight: 700; font-size: 14px; }
+.seg button[aria-pressed="true"] { background: var(--morado); color: #fff; }
+.setup .err { color: var(--rojo); font-size: 14px; font-weight: 700; min-height: 20px; }
+.help { font-size: 14px; color: var(--suave); margin: 12px 0 0; }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .boardwrap, .prompt { max-width: 100%; }
+  aside { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .log { grid-column: 1 / -1; }
+}
+@media (max-width: 720px) {
+  .setup .cols { grid-template-columns: minmax(0, 1fr); }
+}
+/* En celular el selector de cada color baja a su propia línea para no tapar el texto del poder. */
+@media (max-width: 560px) {
+  .seat { grid-template-columns: 24px minmax(0, 1fr); }
+  .seat .seg { grid-column: 1 / -1; display: flex; }
+  .seat .seg button { flex: 1 1 0; padding: 7px 4px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <section class="setup" id="setup">
+    <h1 class="titulo">Invasión<br><span>de Dados</span></h1>
+    <p class="lema">¡Lanza tus dados, conquista planetas y llega primero a 30 puntos!</p>
+    <div class="cols">
+      <div>
+        <div class="sub">¿Quién juega cada color? (2 a 4 jugadores)</div>
+        <div class="seats" id="seats"></div>
+        <div class="err" id="setupErr"></div>
+        <button class="btn" id="startBtn" type="button">Empezar partida</button>
+        <p class="help">Para lanzar: presiona sobre tu franja de color en el borde de la mesa y arrastra hacia donde quieres que vaya el dado. Cuanto más larga la flecha, más lejos llega. Todos juegan en este mismo dispositivo, por turnos.</p>
+      </div>
+      <div class="rulesbox" id="rulesShort"></div>
+    </div>
+  </section>
+
+  <div id="game" hidden>
+    <header class="top">
+      <h1 class="jp">Invasión <span>de Dados</span></h1>
+      <span class="roundtag" id="roundTag">Ronda 1</span>
+      <div class="toplinks">
+        <button class="ghost" id="rulesBtn" type="button">Reglas</button>
+        <button class="ghost" id="quitBtn" type="button">Nueva partida</button>
+      </div>
+    </header>
+    <div class="layout">
+      <div class="boardcol">
+        <div class="boardwrap" id="boardwrap">
+          <canvas id="cv" aria-label="Mesa de juego con seis planetas hexagonales"></canvas>
+          <div class="overlay" id="overlay" hidden></div>
+        </div>
+        <div class="prompt" id="prompt"></div>
+      </div>
+      <aside>
+        <div id="cards" style="display:contents"></div>
+        <div class="log" id="log" aria-live="polite"></div>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- Constantes de juego ----------
+  var W = 1000, H = 1000;
+  var FRICTION = 700;          // desaceleración (unidades/s²)
+  var DIST_PER_DRAG = 2.2;     // distancia de frenado por unidad de flecha
+  var MAX_DIST = 1000;
+  var START_BASES = 2, MAX_BASES = 6, COST = 2;
+  var TARGET = 30, MAX_LEVEL = 4;  // gana quien llega primero a 30 puntos; bases d4, nivel máximo 4
+  var R_HEX = 112, GAP = 62;
+  var R_DIE = 18, R_BASE = 19, R_WHITE = 18, R_CUBE = 11;
+  var EDGE = 34;
+
+  var COLORS = ['azul', 'verde', 'amarillo', 'rojo'];
+  var NAMES = { azul: 'Azul', verde: 'Verde', amarillo: 'Amarillo', rojo: 'Rojo' };
+  var COLOR_NAME = { azul: 'azul', verde: 'verde', amarillo: 'amarillo', rojo: 'rojo' };
+  var HEX = { azul: '#1e6fe0', verde: '#2fae55', amarillo: '#f4c20d', rojo: '#e53935', lila: '#b98cff', neutral: '#8b97b8' };
+  var SIDE = { azul: 'bottom', rojo: 'top', verde: 'left', amarillo: 'right' };
+  var POWER_NAME = { azul: 'Dados blancos', verde: 'Cubitos morados', amarillo: 'Subir y bajar', rojo: 'Antorchas' };
+  // Piezas de poder al empezar y máximo que se puede tener comprando.
+  var POWER_START = { azul: 1, verde: 1, amarillo: 1, rojo: 1 };
+  var POWER_MAX = { azul: 3, verde: 6, amarillo: 3, rojo: 3 };
+  // Planeta favorito de cada color; los dos valles son neutrales.
+  var PLANET = { verde: 'Bosque', rojo: 'Arcilla', azul: 'Montaña', amarillo: 'Trigo' };
+  // Color y dibujo de cada planeta, como en el prototipo.
+  var PLANET_LOOK = {
+    Bosque: { fill: '#2e7d4f', emoji: '🌲' }, Arcilla: { fill: '#c4643a', emoji: '🧱' },
+    'Montaña': { fill: '#8a93ad', emoji: '⛰️' }, Trigo: { fill: '#e2b437', emoji: '🌾' }, Valle: { fill: '#8cc152', emoji: '🌼' }
+  };
+
+  // Seis planetas: dos filas de tres, separadas por un espacio.
+  var TILES = (function () {
+    var dx = Math.sqrt(3) * R_HEX + GAP, dy = dx * Math.sqrt(3) / 2;
+    var cx0 = 500 - dx / 4;
+    var aff = [['verde', null, 'rojo'], ['azul', null, 'amarillo']];
+    var out = [];
+    for (var row = 0; row < 2; row++) {
+      for (var i = 0; i < 3; i++) {
+        out.push({
+          x: cx0 + (i - 1) * dx + (row ? dx / 2 : 0),
+          y: 500 + (row ? dy / 2 : -dy / 2),
+          aff: aff[row][i]
+        });
+      }
+    }
+    return out;
+  })();
+  var RI = R_HEX * Math.sqrt(3) / 2;
+  function planetName(i) { return TILES[i].aff ? PLANET[TILES[i].aff] : 'Valle'; }
+  var NORMALS = [0, Math.PI / 3, 2 * Math.PI / 3].map(function (a) { return [Math.cos(a), Math.sin(a)]; });
+
+  // ---------- Utilidades ----------
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  function gauss() { var u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  // ¿Está el círculo (x, y, r) completamente arriba de la loseta t?
+  function insideTile(t, x, y, r) {
+    var ux = x - t.x, uy = y - t.y;
+    for (var k = 0; k < 3; k++) {
+      if (Math.abs(ux * NORMALS[k][0] + uy * NORMALS[k][1]) > RI - r) return false;
+    }
+    return true;
+  }
+  function tileOf(p) {
+    for (var i = 0; i < TILES.length; i++) if (insideTile(TILES[i], p.x, p.y, p.r)) return i;
+    return -1;
+  }
+  function tileAtPoint(x, y) {
+    for (var i = 0; i < TILES.length; i++) if (insideTile(TILES[i], x, y, 0)) return i;
+    return -1;
+  }
+  // Los dados y las bases cuentan solo si quedan enteros sobre la loseta;
+  // las piezas de poder (dado blanco, cubito morado) cuentan si su centro está encima.
+  function pieceTile(q) { return tileAtPoint(q.x, q.y); }
+
+  // ---------- Estado ----------
+  var S = null;
+  var seatCfg = { azul: 'human', verde: 'bot', amarillo: 'off', rojo: 'bot' };
+
+  function P(color) { for (var i = 0; i < S.players.length; i++) if (S.players[i].color === color) return S.players[i]; return null; }
+  function isHuman(p) { return p && p.kind === 'human'; }
+  function anyHuman() { return S.players.some(isHuman); }
+
+  function newGame() {
+    var players = COLORS.filter(function (c) { return seatCfg[c] !== 'off'; }).map(function (c) {
+      return {
+        color: c, kind: seatCfg[c], res: 1,
+        reserve: START_BASES, owned: START_BASES,
+        power: POWER_START[c], // piezas de poder: dados blancos, cubitos, cargas del amarillo o antorchas
+        powerUsed: 0,          // cubitos en la mesa (verde) o cargas usadas esta ronda (amarillo)
+        diceLeft: 3, extrasLeft: 0
+      };
+    });
+    S = {
+      players: players, pieces: [], round: 0, target: TARGET,
+      starter: 0, order: [], ptr: 0, cur: null, phase: 'idle',
+      double: false, rethrow: false, lastDice: [], aim: null, log: [], timers: []
+    };
+    $('setup').hidden = true;
+    $('game').hidden = false;
+    resize();
+    startRound();
+  }
+
+  function later(fn, ms) { var id = setTimeout(fn, ms); S.timers.push(id); return id; }
+  function clearTimers() { if (S) S.timers.forEach(clearTimeout); }
+
+  function log(msg, title) {
+    S.log.unshift({ msg: msg, title: !!title });
+    if (S.log.length > 80) S.log.pop();
+    renderLog();
+  }
+
+  // ---------- Flujo de la ronda ----------
+  function startRound() {
+    S.round++;
+    S.players.forEach(function (p) {
+      p.diceLeft = 3;
+      p.extrasLeft = 0;   // el rojo ya no lanza dados extra: su poder son las antorchas
+      if (p.color === 'amarillo') p.powerUsed = 0;
+      if (p.color === 'azul' && p.whitesOut) {
+        log('Azul recupera ' + (p.whitesOut === 1 ? 'el dado blanco que le sacaron.' : 'los ' + p.whitesOut + ' dados blancos que le sacaron.'));
+        p.whitesOut = 0;
+      }
+    });
+    var n = S.players.length;
+    S.order = [];
+    for (var i = 0; i < n; i++) S.order.push(S.players[(S.starter + i) % n]);
+    S.ptr = 0;
+    log('Ronda ' + S.round + '. Empieza ' + NAMES[S.order[0].color] + '.', true);
+    nextTurn();
+  }
+
+  function nextTurn() {
+    var n = S.order.length;
+    for (var k = 0; k < n; k++) {
+      var idx = (S.ptr + k) % n, p = S.order[idx];
+      if (p.diceLeft > 0) {
+        S.ptr = (idx + 1) % n;
+        S.cur = p;
+        S.rethrow = false;
+        S.double = !isHuman(p) && p.color === 'rojo' && p.extrasLeft > 0 &&
+          (p.extrasLeft >= p.diceLeft || Math.random() < 0.5);
+        beginAim();
+        return;
+      }
+    }
+    buildPhase();
+  }
+
+  function beginAim() {
+    S.phase = 'aim';
+    S.aim = null;
+    render();
+    if (!isHuman(S.cur)) later(botThrow, 650);
+  }
+
+  function makeDie(p, x, y, vx, vy) {
+    var d = {
+      type: 'die', owner: p.color, x: x, y: y, vx: vx, vy: vy, r: R_DIE, m: 1,
+      ang: rand(0, 6.28), va: rand(-14, 14), revealed: false, pow: false, face: 1
+    };
+    S.pieces.push(d);
+    return d;
+  }
+
+  // Rojo con doble lanzamiento: sus dos dados salen juntos, uno al lado del otro.
+  function launch(sx, sy, vx, vy) {
+    var p = S.cur;
+    if (S.rethrow) p.powerUsed++;   // relanzar no gasta uno de los 3 dados
+    else p.diceLeft--;
+    if (S.double && p.color === 'rojo' && p.extrasLeft > 0) {
+      p.extrasLeft--;
+      var v = Math.hypot(vx, vy) || 1, px = -vy / v, py = vx / v, off = R_DIE + 3;
+      var a2 = gauss() * 0.04, k2 = 1 + gauss() * 0.04;
+      var vx2 = (vx * Math.cos(a2) - vy * Math.sin(a2)) * k2, vy2 = (vx * Math.sin(a2) + vy * Math.cos(a2)) * k2;
+      S.lastDice = [makeDie(p, sx - px * off, sy - py * off, vx, vy), makeDie(p, sx + px * off, sy + py * off, vx2, vy2)];
+    } else {
+      S.lastDice = [makeDie(p, sx, sy, vx, vy)];
+    }
+    S.aim = null;
+    S.phase = 'moving';
+    render();
+  }
+
+  function onSettled() {
+    // Bases que quedaron tocando la mesa vuelven a la reserva.
+    S.pieces.slice().forEach(function (q) {
+      if (q.type === 'base' && tileOf(q) < 0) {
+        removePiece(q);
+        log('Una base de ' + NAMES[q.owner] + ' quedó fuera del planeta y vuelve a la reserva.');
+      }
+      if (q.type === 'white' && pieceTile(q) < 0) {
+        removePiece(q);
+        log('Sacaron un dado blanco de los planetas: Azul lo recupera al terminar la ronda.');
+      }
+      if (q.type === 'torch' && pieceTile(q) < 0) {
+        removePiece(q);
+        log('Sacaron una antorcha de los planetas: vuelve al rojo.');
+      }
+    });
+    var p = S.cur;
+    if (S.lastDice.length > 1) {
+      S.lastDice.forEach(function (q) {
+        if (S.pieces.indexOf(q) < 0) { log('Rojo: un dado se cayó de la mesa.'); return; }
+        q.revealed = true;
+        q.face = 1 + Math.floor(Math.random() * 6);
+        if (tileOf(q) < 0) log('Rojo: un dado quedó afuera.');
+      });
+      afterThrow();
+      return;
+    }
+    var d = S.lastDice[0];
+    var rethrow = S.rethrow;
+    S.rethrow = false;
+    if (d && S.pieces.indexOf(d) >= 0) {
+      d.revealed = true;
+      var on = tileOf(d) >= 0;
+      // Las caras pares (2, 4 y 6) activan el poder,
+      // caiga donde caiga el dado.
+      d.face = 1 + Math.floor(Math.random() * 6);
+      d.pow = d.face % 2 === 0;
+      if (!on) log(NAMES[p.color] + ': el dado quedó afuera.');
+      if (rethrow) {
+        if (d.pow) log('Saca par con el dado relanzado, pero no vuelve a activar el poder.');
+      } else if (d.pow && canUsePower(p)) {
+        S.phase = 'power';
+      if (p.color === 'amarillo') startKin();
+        log(NAMES[p.color] + ' saca POW.');
+        render();
+        if (!isHuman(p)) later(botPower, 700);
+        return;
+      } else if (d.pow) {
+        log(NAMES[p.color] + ' saca POW, pero ' + (p.color === 'amarillo' && p.power - p.powerUsed > 0 ? 'no hay bases que subir ni bajar.' : 'no le quedan ' + (p.color === 'amarillo' ? 'cargas esta ronda' : POWER_NAME[p.color].toLowerCase()) + '.'));
+      }
+    } else if (d) {
+      log(NAMES[p.color] + ': el dado se cayó de la mesa.');
+    }
+    if (d && !rethrow && S.pieces.indexOf(d) < 0 && Math.random() < 0.5 && canUsePower(p)) {
+      // Un dado que cae de la mesa igual muestra un número.
+      log(NAMES[p.color] + ' saca POW.');
+      S.phase = 'power';
+      if (p.color === 'amarillo') startKin();
+      render();
+      if (!isHuman(p)) later(botPower, 700);
+      return;
+    }
+    afterThrow();
+  }
+
+  function afterThrow() {
+    nextTurn();
+  }
+
+  // ---------- Poderes ----------
+  function whitesOnBoard() { return S.pieces.filter(function (q) { return q.type === 'white'; }); }
+  function whitesFree(p) { return p.power - whitesOnBoard().length - (p.whitesOut || 0); }
+  function torchesOnBoard() { return S.pieces.filter(function (q) { return q.type === 'torch'; }); }
+  // Planetas donde hay una antorcha del rojo: cuentan como su planeta favorito.
+  function torchTiles() {
+    var b = {};
+    torchesOnBoard().forEach(function (q) { var t = pieceTile(q); if (t >= 0) b[t] = true; });
+    return b;
+  }
+  function isFavorite(ti, color) { return TILES[ti].aff === color || (color === 'rojo' && !!torchTiles()[ti]); }
+  function myDice(p) { return S.pieces.filter(function (q) { return q.type === 'die' && q.owner === p.color; }); }
+
+  function canUsePower(p) {
+    if (p.color === 'azul') return whitesFree(p) > 0;
+    if (p.color === 'verde') return p.power - p.powerUsed > 0;
+    if (p.color === 'amarillo') return p.power - p.powerUsed > 0 && (kinUpOptions().length > 0 || kinDownOptions().length > 0);
+    if (p.color === 'rojo') return p.power - torchesOnBoard().length > 0;
+    return false;
+  }
+
+  function findFreeSpot(ti, r) {
+    var t = TILES[ti];
+    for (var n = 0; n < 120; n++) {
+      var a = rand(0, 6.283), dd = Math.sqrt(Math.random()) * (RI - r - 4);
+      var x = t.x + Math.cos(a) * dd, y = t.y + Math.sin(a) * dd;
+      if (!insideTile(t, x, y, r + 2)) continue;
+      var ok = S.pieces.every(function (q) { return Math.hypot(q.x - x, q.y - y) > q.r + r + 3; });
+      if (ok) return { x: x, y: y };
+    }
+    return null;
+  }
+
+  function applyPower(target) {
+    var p = S.cur;
+    if (p.color === 'azul') {
+      var spot = findFreeSpot(target, R_WHITE);
+      if (!spot) { log('No hay espacio libre en ese planeta.'); return false; }
+      S.pieces.push({ type: 'white', owner: 'azul', x: spot.x, y: spot.y, vx: 0, vy: 0, r: R_WHITE, m: 1, ang: rand(0, 1.5), va: 0 });
+      log('Azul bloquea ' + planetName(target) + ' con un dado blanco.');
+    } else if (p.color === 'verde') {
+      var s2 = findFreeSpot(target, R_CUBE);
+      if (!s2) { log('No hay espacio libre en ese planeta.'); return false; }
+      S.pieces.push({ type: 'cube', owner: 'verde', x: s2.x, y: s2.y, vx: 0, vy: 0, r: R_CUBE, m: 0.6, ang: rand(0, 1.5), va: 0 });
+      p.powerUsed++;
+      log('Verde pone un cubito morado en ' + planetName(target) + '.');
+    } else if (p.color === 'rojo') {
+      if (TILES[target].aff === 'rojo' || torchTiles()[target]) { log('Ese planeta ya es favorito del rojo.'); return false; }
+      var s3 = findFreeSpot(target, R_CUBE);
+      if (!s3) { log('No hay espacio libre en ese planeta.'); return false; }
+      S.pieces.push({ type: 'torch', owner: 'rojo', x: s3.x, y: s3.y, vx: 0, vy: 0, r: R_CUBE, m: 0.8, ang: rand(0, 1.5), va: 0 });
+      log('Rojo pone una antorcha en ' + planetName(target) + ': ahora es su planeta favorito.');
+    }
+    return true;
+  }
+
+  function finishPower(target) {
+    if (target != null && !applyPower(target)) {
+      // Una persona elige otro planeta; la computadora prueba en otro con espacio o no usa el poder.
+      if (isHuman(S.cur)) return;
+      var alt = TILES.findIndex(function (t, i) { return i !== target && findFreeSpot(i, R_WHITE) && !(S.cur.color === 'rojo' && isFavorite(i, 'rojo')); });
+      if (alt < 0 || !applyPower(alt)) log(NAMES[S.cur.color] + ' no encuentra espacio y no usa su poder.');
+    }
+    afterThrow();
+  }
+
+  // Amarillo: con par sube un nivel una base propia y baja un nivel una base enemiga.
+  // Cada carga se usa una vez por ronda; con 3 cargas puede activarlo en cada lanzamiento.
+  function basesOf(fn) { return S.pieces.filter(function (q) { return q.type === 'base' && tileOf(q) >= 0 && fn(q); }); }
+  function kinUpOptions() { return basesOf(function (q) { return q.owner === 'amarillo' && q.value < MAX_LEVEL; }); }
+  function kinDownOptions() { return basesOf(function (q) { return q.owner !== 'amarillo' && q.value > 1; }); }
+  function startKin() {
+    S.kinStep = kinUpOptions().length ? 'up' : 'down';
+    S.kinPicked = 0;
+  }
+  function kinPick(q) {
+    if (!S.kinPicked++) P('amarillo').powerUsed++;   // la carga se gasta al usarla, no al saltarla
+    if (S.kinStep === 'up') {
+      q.value++;
+      log('Amarillo sube a nivel ' + q.value + ' su base en ' + planetName(tileOf(q)) + '.');
+      S.kinStep = 'down';
+    } else {
+      q.value--;
+      log('Amarillo baja a nivel ' + q.value + ' una base de ' + NAMES[q.owner] + ' en ' + planetName(tileOf(q)) + '.');
+      S.kinStep = null;
+    }
+    if (S.kinStep === 'down' && !kinDownOptions().length) S.kinStep = null;
+    if (!S.kinStep) { finishPower(null); return; }
+    render();
+  }
+  // Valor de una base para la computadora: nivel + planeta favorito, nada si está bloqueada.
+  function baseWorth(q) { var ti = tileOf(q); return blockedTiles()[ti] ? 0 : q.value + (isFavorite(ti, q.owner) ? 1 : 0) + Math.random() * 0.3; }
+
+  // ---------- Física ----------
+  function removePiece(q) {
+    var i = S.pieces.indexOf(q);
+    if (i < 0) return;
+    S.pieces.splice(i, 1);
+    if (q.type === 'base') {
+      var o = P(q.owner); o.reserve++;
+    } else if (q.type === 'white') {
+      // Un dado blanco que sacan de los planetas no se puede usar hasta que termine la ronda.
+      var a = P('azul'); if (a) a.whitesOut = (a.whitesOut || 0) + 1;
+    } else if (q.type === 'cube') {
+      var v = P('verde'); if (v) v.powerUsed = Math.max(0, v.powerUsed - 1);
+    }
+  }
+
+  function step(dt) {
+    var ps = S.pieces, i, j;
+    for (i = 0; i < ps.length; i++) {
+      var a = ps[i];
+      var sp = Math.hypot(a.vx, a.vy);
+      if (sp > 0) {
+        var dec = FRICTION * dt * (a.type === 'die' ? 1 : 1.6);
+        if (sp <= dec) { a.vx = a.vy = 0; }
+        else { a.vx *= (sp - dec) / sp; a.vy *= (sp - dec) / sp; }
+      }
+      a.x += a.vx * dt; a.y += a.vy * dt;
+      a.ang += a.va * dt; a.va *= 0.985;
+      if (sp < 20) a.va *= 0.9;
+    }
+    for (i = 0; i < ps.length; i++) {
+      for (j = i + 1; j < ps.length; j++) {
+        var A = ps[i], B = ps[j];
+        var dx = B.x - A.x, dy = B.y - A.y, dist = Math.hypot(dx, dy), min = A.r + B.r;
+        if (dist >= min || dist === 0) continue;
+        var nx = dx / dist, ny = dy / dist, over = min - dist;
+        var ia = 1 / A.m, ib = 1 / B.m, sum = ia + ib;
+        A.x -= nx * over * ia / sum; A.y -= ny * over * ia / sum;
+        B.x += nx * over * ib / sum; B.y += ny * over * ib / sum;
+        var rv = (B.vx - A.vx) * nx + (B.vy - A.vy) * ny;
+        if (rv < 0) {
+          var jimp = -(1 + 0.6) * rv / sum;
+          A.vx -= jimp * ia * nx; A.vy -= jimp * ia * ny;
+          B.vx += jimp * ib * nx; B.vy += jimp * ib * ny;
+          A.va += rand(-6, 6); B.va += rand(-6, 6);
+        }
+      }
+    }
+    // Lo que sale de la mesa se cae.
+    ps.slice().forEach(function (q) {
+      if (q.x < 0 || q.x > W || q.y < 0 || q.y > H) {
+        if (q.type === 'base') log('Una base de ' + NAMES[q.owner] + ' cayó de la mesa y vuelve a la reserva.');
+        if (q.type === 'white') log('Un dado blanco cayó de la mesa: Azul lo recupera al terminar la ronda.');
+        if (q.type === 'torch') log('Una antorcha cayó de la mesa y vuelve al rojo.');
+        removePiece(q);
+      }
+    });
+  }
+
+  function allStill() {
+    return S.pieces.every(function (q) { return Math.hypot(q.vx, q.vy) < 3; });
+  }
+
+  // ---------- Construcción, puntuación y compras ----------
+  function buildPhase() {
+    S.phase = 'build';
+    var built = {};
+    S.players.forEach(function (p) { built[p.color] = { bases: 0, faltan: 0, cubos: 0 }; });
+    S.pieces.slice().forEach(function (q) {
+      if (q.type !== 'die') return;
+      var ti = tileOf(q), o = P(q.owner);
+      if (ti >= 0) {
+        if (o.reserve > 0) {
+          o.reserve--;
+          S.pieces.push({ type: 'base', owner: q.owner, x: q.x, y: q.y, vx: 0, vy: 0, r: R_BASE, m: 1.3, ang: 0, va: 0, value: 1, fresh: true });
+          built[q.owner].bases++;
+        } else built[q.owner].faltan++;
+      }
+      removePiece(q);
+    });
+    S.pieces.slice().forEach(function (q) {
+      if (q.type !== 'cube') return;
+      var v = P('verde');
+      if (pieceTile(q) >= 0 && v.reserve > 0) {
+        v.reserve--;
+        S.pieces.push({ type: 'base', owner: 'verde', x: q.x, y: q.y, vx: 0, vy: 0, r: R_BASE, m: 1.3, ang: 0, va: 0, value: 1, fresh: true });
+        built.verde.bases++; built.verde.cubos++;
+      }
+      removePiece(q);
+    });
+    var rows = S.players.map(function (p) {
+      var b = built[p.color], extra = [];
+      if (b.cubos) extra.push(b.cubos + ' con cubito morado');
+      if (b.faltan) extra.push(b.faltan + ' sin base en reserva');
+      return '<tr><td style="color:' + HEX[p.color] + '">' + NAMES[p.color] + '</td><td class="num">' + b.bases + '</td><td>' + (extra.join(', ') || '') + '</td></tr>';
+    }).join('');
+    S.players.forEach(function (p) { if (built[p.color].bases) log(NAMES[p.color] + ' construye ' + built[p.color].bases + ' base' + (built[p.color].bases > 1 ? 's' : '') + '.'); });
+    render();
+    showOverlay(
+      '<p class="eyebrow">Fase de construcción</p><h2>Nuevas bases</h2>' +
+      '<p style="margin:0;color:var(--suave)">Cada dado arriba de un planeta se convierte en una base de su dueño.</p>' +
+      '<table><tr><th>Jugador</th><th class="num">Bases</th><th></th></tr>' + rows + '</table>',
+      'Puntuar', scorePhase);
+  }
+
+  function blockedTiles() {
+    var b = {};
+    whitesOnBoard().forEach(function (w) { var t = pieceTile(w); if (t >= 0) b[t] = true; });
+    return b;
+  }
+
+  function scorePhase() {
+    S.phase = 'score';
+    var blocked = blockedTiles();
+    var gain = {}, detail = {};
+    S.players.forEach(function (p) { gain[p.color] = 0; detail[p.color] = { bases: 0, afin: 0, bloq: 0 }; });
+    var favDone = {};   // el planeta favorito da +1 una sola vez por jugador, tenga las bases que tenga ahí
+    S.pieces.forEach(function (q) {
+      if (q.type !== 'base') return;
+      var ti = tileOf(q);
+      if (!q.fresh) q.value = Math.min(MAX_LEVEL, q.value + 1);
+      q.fresh = false;
+      if (ti < 0) return;
+      if (blocked[ti]) { detail[q.owner].bloq++; return; }
+      var y = q.value;
+      if (isFavorite(ti, q.owner) && !favDone[q.owner + ti]) { favDone[q.owner + ti] = true; y += 1; detail[q.owner].afin++; }
+      gain[q.owner] += y;
+      detail[q.owner].bases++;
+    });
+
+    S.players.forEach(function (p) { p.res += gain[p.color]; });
+    var rows = S.players.map(function (p) {
+      var d = detail[p.color], notes = [];
+      if (d.afin) notes.push('+' + d.afin + ' en planeta favorito');
+      if (d.bloq) notes.push(d.bloq + ' bloqueada' + (d.bloq > 1 ? 's' : ''));
+      log(NAMES[p.color] + ' gana ' + gain[p.color] + ' punto' + (gain[p.color] === 1 ? '' : 's') + '.');
+      return '<tr><td style="color:' + HEX[p.color] + '">' + NAMES[p.color] + '</td><td class="num">+' + gain[p.color] + '</td><td class="num">' + p.res + '</td><td>' + notes.join(', ') + '</td></tr>';
+    }).join('');
+    render();
+
+    var reached = S.players.filter(function (p) { return p.res >= S.target; });
+    if (reached.length) {
+      // Si varios pasan la meta en la misma ronda, gana quien tenga más puntos;
+      // si empatan, quien tenga la base de nivel más alto.
+      reached.sort(function (a, b) { return b.res - a.res || topLevel(b) - topLevel(a); });
+      var w = reached[0];
+      var tie = reached.length > 1 && reached[1].res === w.res && topLevel(reached[1]) === topLevel(w);
+      S.phase = 'over';
+      S.winners = reached.filter(function (p) { return p.res === w.res && topLevel(p) === topLevel(w); }).map(function (p) { return p.color; });
+      var title = tie ? '¡Empate entre ' + S.winners.map(function (c) { return NAMES[c]; }).join(' y ') + '!' : '¡Gana ' + NAMES[w.color] + '!';
+      log(title, true);
+      render();
+      showOverlay(
+        '<p class="eyebrow">Fin de la partida</p><h2 style="color:' + HEX[w.color] + '">' + title + '</h2>' +
+        '<p style="margin:0;color:var(--suave)">' + (tie ? 'Llegaron' : 'Llegó') + ' a ' + w.res + ' puntos en la ronda ' + S.round + '.</p>' +
+        '<table><tr><th>Jugador</th><th class="num">Ronda</th><th class="num">Total</th><th></th></tr>' + rows + '</table>',
+        'Nueva partida', function () { clearTimers(); showSetup(); });
+      return;
+    }
+    showOverlay(
+      '<p class="eyebrow">Fase de puntuación</p><h2>Producción de la ronda ' + S.round + '</h2>' +
+      '<p style="margin:0;color:var(--suave)">Las bases que aguantaron suben un nivel (máximo 4). Cada base da tantos puntos como su nivel. Tener bases en tu planeta favorito da +1 (una sola vez, no por cada base; para el rojo, también donde tenga una antorcha). Un dado blanco bloquea su planeta.</p>' +
+      '<table><tr><th>Jugador</th><th class="num">Ronda</th><th class="num">Total</th><th></th></tr>' + rows + '</table>',
+      'Ir a compras', shopPhase);
+  }
+
+  function topLevel(p) { return Math.max.apply(null, [0].concat(S.pieces.filter(function (q) { return q.type === 'base' && q.owner === p.color; }).map(function (q) { return q.value; }))); }
+  function basesOnBoard(p) { return S.pieces.filter(function (q) { return q.type === 'base' && q.owner === p.color; }).length; }
+
+  function canBuy(p, what) {
+    if (p.res < COST) return false;
+    if (what === 'base') return p.owned < MAX_BASES;
+    return p.power < POWER_MAX[p.color];
+  }
+  function buy(p, what) {
+    if (!canBuy(p, what)) return;
+    p.res -= COST;
+    if (what === 'base') { p.owned++; p.reserve++; }
+    else p.power++;
+    log(NAMES[p.color] + ' compra ' + (what === 'base' ? 'una base' : POWER_PIECE[p.color]) + '.');
+  }
+
+  var POWER_PIECE = { azul: 'un dado blanco', verde: 'un cubito morado', amarillo: 'una carga de subir y bajar', rojo: 'una antorcha' };
+
+  function botShop(p) {
+    var guard = 0;
+    while (p.res >= COST && guard++ < 6) {
+      // No gasta si con eso se aleja de una victoria cercana.
+      if (S.target - p.res <= 6) break;
+      if (p.reserve < 2 && canBuy(p, 'base')) buy(p, 'base');
+      else if (p.res >= 5 && canBuy(p, 'power') && Math.random() < 0.6) buy(p, 'power');
+      else if (p.res >= 7 && canBuy(p, 'base')) buy(p, 'base');
+      else break;
+    }
+  }
+
+  function shopPhase() {
+    S.phase = 'shop';
+    S.players.forEach(function (p) { if (!isHuman(p)) botShop(p); });
+    S.players.forEach(function (p) { p.res = Math.max(0, p.res); });
+    renderShop();
+    if (!anyHuman()) later(endShop, 1400);
+  }
+
+  function renderShop() {
+    var rows = S.players.map(function (p) {
+      var det = 'Puntos <b>' + p.res + '</b> · Bases ' + p.reserve + ' en reserva de ' + p.owned + ' · ' + POWER_NAME[p.color] + ' ' + p.power + '/' + POWER_MAX[p.color];
+      var buys = isHuman(p)
+        ? '<button class="btn" data-buy="base" data-c="' + p.color + '"' + (canBuy(p, 'base') ? '' : ' disabled') + '>+ Base · 2</button>' +
+          '<button class="btn" data-buy="power" data-c="' + p.color + '"' + (canBuy(p, 'power') ? '' : ' disabled') + '>+ Poder · 2</button>'
+        : '<span style="color:var(--suave);font-size:13px">computadora</span>';
+      return '<div class="shoprow"><span class="who" style="color:' + HEX[p.color] + '">' + NAMES[p.color] + '</span><div class="buys">' + buys + '</div><div class="det">' + det + '</div></div>';
+    }).join('');
+    showOverlay(
+      '<p class="eyebrow">Fase de compras</p><h2>Refuerzos</h2>' +
+      '<p style="margin:0;color:var(--suave)">Cada compra cuesta 2 puntos y se resta de tu puntaje. Las piezas compradas son tuyas por el resto de la partida.</p>' + rows,
+      'Empezar ronda ' + (S.round + 1), endShop);
+    $('overlay').querySelectorAll('[data-buy]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        buy(P(b.getAttribute('data-c')), b.getAttribute('data-buy'));
+        renderShop(); render();
+      });
+    });
+  }
+
+  function endShop() {
+    if (S.phase !== 'shop') return;
+    hideOverlay();
+    startRound();
+  }
+
+  // ---------- Bots ----------
+  function launchLine(color) {
+    var s = SIDE[color];
+    if (s === 'bottom') return { x: null, y: H - EDGE };
+    if (s === 'top') return { x: null, y: EDGE };
+    if (s === 'left') return { x: EDGE, y: null };
+    return { x: W - EDGE, y: null };
+  }
+  function startPoint(color, px, py) {
+    var L = launchLine(color);
+    return L.x === null ? { x: clamp(px, 70, W - 70), y: L.y } : { x: L.x, y: clamp(py, 70, H - 70) };
+  }
+
+  function botThrow() {
+    if (S.phase !== 'aim') return;
+    var p = S.cur, target = null, push = false;
+    var rivals = S.pieces.filter(function (q) { return q.type === 'base' && q.owner !== p.color; });
+    // Piezas de poder enemigas que vale la pena sacar de un empujón.
+    var whites = S.pieces.filter(function (q) { return (q.type === 'white' && p.color !== 'azul') || (q.type === 'torch' && p.color !== 'rojo'); });
+    if (whites.length && Math.random() < 0.3) {
+      target = { x: whites[0].x, y: whites[0].y }; push = true;
+    } else if (rivals.length && Math.random() < 0.4) {
+      rivals.sort(function (a, b) { return b.value - a.value; });
+      var b = rivals[Math.floor(Math.random() * Math.min(3, rivals.length))];
+      target = { x: b.x, y: b.y }; push = true;
+    } else {
+      var weights = TILES.map(function (t) { return t.aff === p.color ? 3 : t.aff ? 1 : 1.6; });
+      var tot = weights.reduce(function (a, b) { return a + b; }, 0), r = Math.random() * tot, ti = 0;
+      while (r > weights[ti]) { r -= weights[ti]; ti++; }
+      target = findFreeSpot(ti, R_DIE + 6) || { x: TILES[ti].x, y: TILES[ti].y };
+    }
+    var st = startPoint(p.color, target.x + rand(-90, 90), target.y + rand(-90, 90));
+    var dx = target.x - st.x, dy = target.y - st.y, dist = Math.hypot(dx, dy);
+    var travel = clamp(dist + (push ? 140 : 0), 60, MAX_DIST);
+    var speed = Math.sqrt(2 * FRICTION * travel) * (1 + gauss() * 0.04);
+    var ang = Math.atan2(dy, dx) + gauss() * 0.03;
+    S.aim = { sx: st.x, sy: st.y, ex: st.x + Math.cos(ang) * travel / DIST_PER_DRAG, ey: st.y + Math.sin(ang) * travel / DIST_PER_DRAG, bot: true };
+    later(function () {
+      if (S.phase !== 'aim') return;
+      launch(st.x, st.y, Math.cos(ang) * speed, Math.sin(ang) * speed);
+    }, 550);
+  }
+
+  function botPower() {
+    if (S.phase !== 'power') return;
+    var p = S.cur;
+    if (p.color === 'azul') {
+      var best = -1, bestV = 0;
+      TILES.forEach(function (t, i) {
+        var v = 0;
+        if (blockedTiles()[i]) return;
+        S.pieces.forEach(function (q) { if (q.type === 'base' && tileOf(q) === i) v += (q.owner === 'azul' ? -2 : 1) * q.value; });
+        if (v > bestV) { bestV = v; best = i; }
+      });
+      if (best < 0) { log('Azul guarda su dado blanco.'); finishPower(null); return; }
+      finishPower(best);
+    } else if (p.color === 'verde') {
+      var aff = TILES.findIndex(function (t) { return t.aff === 'verde'; });
+      var ti = Math.random() < 0.5 ? aff : Math.floor(Math.random() * TILES.length);
+      if (!findFreeSpot(ti, R_CUBE)) ti = aff;
+      finishPower(ti);
+    } else if (p.color === 'rojo') {
+      // Pone la antorcha donde tenga más bases o dados que no estén ya en un planeta favorito.
+      var bt = -1, bv = -1;
+      TILES.forEach(function (t, i) {
+        if (isFavorite(i, 'rojo') || !findFreeSpot(i, R_CUBE)) return;
+        var v = Math.random() * 0.5;
+        S.pieces.forEach(function (q) { if ((q.type === 'base' || q.type === 'die') && q.owner === 'rojo' && tileOf(q) === i) v += q.type === 'base' ? q.value : 1; });
+        if (v > bv) { bv = v; bt = i; }
+      });
+      if (bt < 0) { log('Rojo guarda su antorcha.'); finishPower(null); return; }
+      finishPower(bt);
+    } else if (p.color === 'amarillo') {
+      var best = function (list) { return list.sort(function (a, b) { return baseWorth(b) - baseWorth(a); })[0]; };
+      if (S.kinStep === 'up') kinPick(best(kinUpOptions()));
+      if (S.kinStep === 'down') kinPick(best(kinDownOptions()));
+    }
+  }
+
+  // ---------- Entrada del jugador ----------
+  var cv = $('cv'), ctx = cv.getContext('2d');
+  var scale = 1, dpr = 1;
+
+  function toWorld(e) {
+    var r = cv.getBoundingClientRect();
+    return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H };
+  }
+
+  var dragging = false;
+  cv.addEventListener('pointerdown', function (e) {
+    if (!S || !isHuman(S.cur)) return;
+    var w = toWorld(e);
+    if (S.phase === 'aim') {
+      var st = startPoint(S.cur.color, w.x, w.y);
+      // Hay que empezar cerca del propio borde.
+      if (Math.hypot(st.x - w.x, st.y - w.y) > 110) { flashPrompt(); return; }
+      dragging = true;
+      cv.setPointerCapture(e.pointerId);
+      S.aim = { sx: st.x, sy: st.y, ex: st.x, ey: st.y };
+    } else if (S.phase === 'power') {
+      var p = S.cur;
+      if (p.color === 'amarillo') {
+        var opts = S.kinStep === 'up' ? kinUpOptions() : kinDownOptions();
+        var hit = opts.filter(function (q) { return Math.hypot(q.x - w.x, q.y - w.y) < q.r * 1.8; })[0];
+        if (hit) kinPick(hit); else flashPrompt();
+        return;
+      }
+      var ti = tileAtPoint(w.x, w.y);
+      if (ti >= 0) finishPower(ti);
+    }
+  });
+  cv.addEventListener('pointermove', function (e) {
+    if (!dragging || !S.aim) return;
+    var w = toWorld(e);
+    var dx = w.x - S.aim.sx, dy = w.y - S.aim.sy, L = Math.hypot(dx, dy), maxL = MAX_DIST / DIST_PER_DRAG;
+    if (L > maxL) { dx *= maxL / L; dy *= maxL / L; }
+    S.aim.ex = S.aim.sx + dx; S.aim.ey = S.aim.sy + dy;
+  });
+  function endDrag() {
+    if (!dragging) return;
+    dragging = false;
+    var a = S.aim;
+    if (!a || S.phase !== 'aim') return;
+    var dx = a.ex - a.sx, dy = a.ey - a.sy, L = Math.hypot(dx, dy);
+    if (L < 15) { S.aim = null; return; }
+    var travel = Math.min(MAX_DIST, L * DIST_PER_DRAG);
+    var speed = Math.sqrt(2 * FRICTION * travel) * (1 + gauss() * 0.03);
+    var ang = Math.atan2(dy, dx) + gauss() * 0.02;
+    launch(a.sx, a.sy, Math.cos(ang) * speed, Math.sin(ang) * speed);
+  }
+  cv.addEventListener('pointerup', endDrag);
+  cv.addEventListener('pointercancel', function () { dragging = false; if (S) S.aim = null; });
+
+  function flashPrompt() {
+    var el = $('prompt');
+    el.animate && el.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'translateX(0)' }], { duration: 260 });
+  }
+
+  // ---------- Dibujo ----------
+  var STARS = [];
+  for (var s = 0; s < 140; s++) STARS.push([Math.random() * W, Math.random() * H, Math.random() * 1.6 + 0.3, Math.random()]);
+
+  function resize() {
+    var r = cv.getBoundingClientRect();
+    dpr = window.devicePixelRatio || 1;
+    cv.width = Math.max(1, Math.round(r.width * dpr));
+    cv.height = Math.max(1, Math.round(r.height * dpr));
+    scale = r.width / W;
+  }
+  if (window.ResizeObserver) new ResizeObserver(function () { if (!$('game').hidden) resize(); }).observe($('boardwrap'));
+  window.addEventListener('resize', function () { if (!$('game').hidden) resize(); });
+
+  function hexPath(x, y, R) {
+    ctx.beginPath();
+    for (var k = 0; k < 6; k++) {
+      var a = Math.PI / 180 * (60 * k - 90);
+      var px = x + R * Math.cos(a), py = y + R * Math.sin(a);
+      if (k) ctx.lineTo(px, py); else ctx.moveTo(px, py);
+    }
+    ctx.closePath();
+  }
+  function rrect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  // Puntos de cada cara del dado, en una grilla de 3 x 3.
+  var PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+  function drawPips(face, sz, color) {
+    ctx.fillStyle = color;
+    PIPS[face].forEach(function (k) {
+      var px = ((k % 3) - 1) * sz * 0.27, py = (Math.floor(k / 3) - 1) * sz * 0.27;
+      ctx.beginPath(); ctx.arc(px, py, sz * 0.09, 0, 6.29); ctx.fill();
+    });
+  }
+  function drawDie(q, t) {
+    var c = HEX[q.owner], sz = q.r * 1.9;
+    ctx.save();
+    ctx.translate(q.x, q.y); ctx.rotate(q.ang);
+    ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = 8; ctx.shadowOffsetY = 3;
+    ctx.fillStyle = c;
+    rrect(-sz / 2, -sz / 2, sz, sz, 7); ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.stroke();
+    // Mientras rueda cambia de cara; al detenerse muestra el número que salió.
+    var face = q.revealed ? q.face : 1 + (Math.floor(t / 90 + q.ang * 3) % 6 + 6) % 6;
+    drawPips(face, sz, q.owner === 'amarillo' ? '#1b1638' : '#ffffff');
+    if (q.revealed && q.pow) {
+      ctx.lineWidth = 3; ctx.strokeStyle = '#ffffff';
+      rrect(-sz / 2 - 4, -sz / 2 - 4, sz + 8, sz + 8, 9); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // Base: un cubito del color del jugador con su nivel (1 a 4).
+  function drawBase(q) {
+    var c = HEX[q.owner], sz = q.r * 1.75;
+    ctx.save();
+    ctx.translate(q.x, q.y);
+    ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 6; ctx.shadowOffsetY = 3;
+    ctx.fillStyle = c; ctx.fillRect(-sz / 2, -sz / 2, sz, sz);
+    ctx.shadowColor = 'transparent';
+    ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(-sz / 2, sz / 2 - 5, sz, 5);
+    ctx.lineWidth = q.fresh ? 3 : 2; ctx.strokeStyle = q.fresh ? '#ffffff' : 'rgba(0,0,0,.45)';
+    ctx.strokeRect(-sz / 2, -sz / 2, sz, sz);
+    ctx.fillStyle = q.owner === 'amarillo' ? '#1b1638' : '#ffffff';
+    ctx.font = '800 19px "Baloo 2", system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(String(q.value), 0, 1);
+    ctx.restore();
+  }
+
+  function drawWhite(q) {
+    var sz = q.r * 1.9;
+    ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.ang);
+    ctx.shadowColor = '#ffffff'; ctx.shadowBlur = 16;
+    ctx.fillStyle = '#ffffff'; rrect(-sz / 2, -sz / 2, sz, sz, 6); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = HEX.azul; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(-sz * 0.25, -sz * 0.25); ctx.lineTo(sz * 0.25, sz * 0.25); ctx.moveTo(sz * 0.25, -sz * 0.25); ctx.lineTo(-sz * 0.25, sz * 0.25); ctx.stroke();
+    ctx.restore();
+  }
+  function drawTorch(q) {
+    var sz = q.r * 1.7;
+    ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.ang);
+    ctx.shadowColor = '#ff7a12'; ctx.shadowBlur = 16;
+    ctx.fillStyle = '#ff7a12'; ctx.fillRect(-sz / 2, -sz / 2, sz, sz);
+    ctx.shadowBlur = 0; ctx.strokeStyle = '#5a0e00'; ctx.lineWidth = 1.5; ctx.strokeRect(-sz / 2, -sz / 2, sz, sz);
+    ctx.font = Math.round(sz * 0.75) + 'px system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('🔥', 0, 1);
+    ctx.restore();
+  }
+  function drawCube(q) {
+    var sz = q.r * 1.7;
+    ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.ang);
+    ctx.shadowColor = HEX.lila; ctx.shadowBlur = 12;
+    ctx.fillStyle = HEX.lila; ctx.fillRect(-sz / 2, -sz / 2, sz, sz);
+    ctx.shadowBlur = 0; ctx.strokeStyle = '#2b1655'; ctx.lineWidth = 1.5; ctx.strokeRect(-sz / 2, -sz / 2, sz, sz);
+    ctx.restore();
+  }
+
+  function drawStrip(color, active) {
+    var s = SIDE[color], c = HEX[color], d = EDGE * 2;
+    ctx.save();
+    ctx.globalAlpha = active ? 0.35 : 0.1;
+    ctx.fillStyle = c;
+    if (s === 'bottom') ctx.fillRect(0, H - d, W, d);
+    if (s === 'top') ctx.fillRect(0, 0, W, d);
+    if (s === 'left') ctx.fillRect(0, 0, d, H);
+    if (s === 'right') ctx.fillRect(W - d, 0, d, H);
+    ctx.restore();
+  }
+
+  function draw(t) {
+    ctx.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
+    ctx.fillStyle = '#1a1650'; ctx.fillRect(0, 0, W, H);
+    STARS.forEach(function (st) {
+      ctx.globalAlpha = 0.35 + 0.4 * Math.sin(t / 900 + st[3] * 9);
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(st[0], st[1], st[2], st[2]);
+    });
+    ctx.globalAlpha = 1;
+    if (!S) return;
+    S.players.forEach(function (p) { drawStrip(p.color, S.cur === p && (S.phase === 'aim' || S.phase === 'moving')); });
+
+    var blocked = blockedTiles();
+    var powerPick = S.phase === 'power' && isHuman(S.cur);
+    TILES.forEach(function (tl, i) {
+      var look = PLANET_LOOK[planetName(i)];
+      hexPath(tl.x, tl.y, R_HEX);
+      ctx.fillStyle = look.fill; ctx.fill();
+      var tilePick = powerPick && S.cur.color !== 'amarillo';
+      ctx.lineWidth = tilePick ? 8 : 5; ctx.strokeStyle = tilePick ? '#ff8a3d' : '#f1ecff';
+      ctx.globalAlpha = tilePick ? 0.6 + 0.4 * Math.sin(t / 200) : 1;
+      ctx.stroke(); ctx.globalAlpha = 1;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = '46px system-ui, sans-serif'; ctx.globalAlpha = 0.85;
+      ctx.fillText(look.emoji, tl.x, tl.y - 14);
+      ctx.globalAlpha = 1;
+      ctx.font = '800 20px "Baloo 2", system-ui, sans-serif';
+      ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.strokeText(planetName(i), tl.x, tl.y + 34);
+      ctx.fillStyle = '#ffffff'; ctx.fillText(planetName(i), tl.x, tl.y + 34);
+      // Punto del color al que le gusta este planeta.
+      if (tl.aff) {
+        ctx.beginPath(); ctx.arc(tl.x, tl.y - R_HEX + 14, 9, 0, 6.29);
+        ctx.fillStyle = HEX[tl.aff]; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#ffffff'; ctx.stroke();
+      }
+      if (blocked[i]) {
+        ctx.save(); hexPath(tl.x, tl.y, R_HEX - 3); ctx.clip();
+        ctx.strokeStyle = '#ffffff30'; ctx.lineWidth = 6;
+        for (var k = -260; k < 260; k += 22) { ctx.beginPath(); ctx.moveTo(tl.x + k, tl.y - 140); ctx.lineTo(tl.x + k + 140, tl.y + 140); ctx.stroke(); }
+        ctx.restore();
+      }
+    });
+
+    var kinOpts = powerPick && S.cur.color === 'amarillo' ? (S.kinStep === 'down' ? kinDownOptions() : kinUpOptions()) : [];
+    var order = { base: 0, cube: 1, torch: 1, white: 2, die: 3 };
+    S.pieces.slice().sort(function (a, b) { return order[a.type] - order[b.type]; }).forEach(function (q) {
+      if (q.type === 'die') drawDie(q, t);
+      else if (q.type === 'base') {
+        if (kinOpts.indexOf(q) >= 0) {
+          ctx.save(); ctx.strokeStyle = HEX.amarillo; ctx.lineWidth = 3; ctx.globalAlpha = 0.6 + 0.4 * Math.sin(t / 200);
+          ctx.beginPath(); ctx.arc(q.x, q.y, q.r * 1.9, 0, 6.29); ctx.stroke(); ctx.restore();
+        }
+        drawBase(q);
+      }
+      else if (q.type === 'white') drawWhite(q);
+      else if (q.type === 'torch') drawTorch(q);
+      else drawCube(q);
+    });
+
+    // Flecha de lanzamiento
+    if (S.aim && S.phase === 'aim') {
+      var a = S.aim, c = HEX[S.cur.color];
+      var L = Math.hypot(a.ex - a.sx, a.ey - a.sy), pct = Math.min(1, L * DIST_PER_DRAG / MAX_DIST);
+      ctx.strokeStyle = c; ctx.fillStyle = c; ctx.lineWidth = 5; ctx.lineCap = 'round';
+      ctx.setLineDash([2, 12]);
+      ctx.beginPath(); ctx.moveTo(a.sx, a.sy); ctx.lineTo(a.ex, a.ey); ctx.stroke();
+      ctx.setLineDash([]);
+      if (L > 10) {
+        var an = Math.atan2(a.ey - a.sy, a.ex - a.sx);
+        ctx.beginPath();
+        ctx.moveTo(a.ex + Math.cos(an) * 14, a.ey + Math.sin(an) * 14);
+        ctx.lineTo(a.ex + Math.cos(an + 2.5) * 16, a.ey + Math.sin(an + 2.5) * 16);
+        ctx.lineTo(a.ex + Math.cos(an - 2.5) * 16, a.ey + Math.sin(an - 2.5) * 16);
+        ctx.closePath(); ctx.fill();
+      }
+      if (S.double) {
+        var an2 = Math.atan2(a.ey - a.sy, a.ex - a.sx), off = R_DIE + 3;
+        [-1, 1].forEach(function (k) {
+          drawDie({ x: a.sx - Math.sin(an2) * off * k, y: a.sy + Math.cos(an2) * off * k, r: R_DIE, ang: 0, owner: 'rojo', revealed: true, pow: false, face: 6 }, t);
+        });
+      } else drawDie({ x: a.sx, y: a.sy, r: R_DIE, ang: 0, owner: S.cur.color, revealed: true, pow: false, face: 6 }, t);
+      ctx.font = '800 18px "Baloo 2", system-ui, sans-serif'; ctx.textAlign = 'center';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(Math.round(pct * 100) + '%', a.sx + (SIDE[S.cur.color] === 'left' ? 46 : SIDE[S.cur.color] === 'right' ? -46 : 0), a.sy + (SIDE[S.cur.color] === 'bottom' ? -34 : SIDE[S.cur.color] === 'top' ? 40 : -30));
+    }
+  }
+
+  // ---------- Bucle ----------
+  var last = 0;
+  function frame(t) {
+    var dt = Math.min(0.05, (t - last) / 1000 || 0);
+    last = t;
+    if (S && S.phase === 'moving') {
+      var sub = 6;
+      for (var i = 0; i < sub; i++) step(dt / sub);
+      if (allStill()) {
+        S.pieces.forEach(function (q) { q.vx = q.vy = 0; });
+        S.phase = 'settling';
+        later(onSettled, 250);
+      }
+    }
+    if (!$('game').hidden) draw(t);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // ---------- Interfaz ----------
+  function showOverlay(html, btnLabel, cb) {
+    var ov = $('overlay');
+    ov.innerHTML = '<div class="card">' + html + '<div class="actions"><button class="btn" id="ovBtn" type="button">' + esc(btnLabel) + '</button></div></div>';
+    ov.hidden = false;
+    $('ovBtn').addEventListener('click', function () { hideOverlay(); cb(); });
+    if (!anyHuman() && S.phase !== 'over' && S.phase !== 'shop') later(function () { if (!ov.hidden) { hideOverlay(); cb(); } }, 1600);
+  }
+  function hideOverlay() { $('overlay').hidden = true; $('overlay').innerHTML = ''; }
+
+  function render() {
+    if (!S) return;
+    $('roundTag').textContent = 'Ronda ' + S.round + ' · meta ' + S.target + ' puntos';
+    renderCards();
+    renderPrompt();
+  }
+
+  function renderCards() {
+    $('cards').innerHTML = S.players.map(function (p) {
+      // Track de puntaje del 1 al 30, en dos filas de 15.
+      var cells = '';
+      for (var i = 1; i <= S.target; i++) cells += '<i class="' + (i <= p.res ? 'on' : '') + (i === S.target ? ' goal' : '') + '"></i>';
+      var dice = 'Dados <b>' + p.diceLeft + '</b>';
+      var pw = POWER_NAME[p.color] + ' <b>' + (p.color === 'azul' ? whitesFree(p) + ' libre' + (whitesFree(p) === 1 ? '' : 's') + ' de ' + p.power + (p.whitesOut ? ' (' + p.whitesOut + ' vuelve' + (p.whitesOut === 1 ? '' : 'n') + ' al final de la ronda)' : '')
+        : p.color === 'rojo' ? p.power - torchesOnBoard().length + ' libre' + (p.power - torchesOnBoard().length === 1 ? '' : 's') + ' de ' + p.power
+        : p.color === 'amarillo' ? (p.power - p.powerUsed) + ' de ' + p.power + ' esta ronda'
+        : (p.power - p.powerUsed) + ' de ' + p.power) + '</b>';
+      return '<div class="pcard' + (S.cur === p && S.phase !== 'shop' && S.phase !== 'build' && S.phase !== 'score' ? ' cur' : '') + '" style="--c:' + HEX[p.color] + '">' +
+        '<div class="row"><span class="chip"></span><span class="nm">' + NAMES[p.color] + '</span><span class="kind">' + (isHuman(p) ? 'persona' : 'computadora') + ' · favorito ' + PLANET[p.color] + '</span>' +
+        '<span class="res">' + p.res + '<small>PTS</small></span></div>' +
+        '<div class="mini-track" title="' + p.res + ' de ' + S.target + ' puntos">' + cells + '</div>' +
+        '<div class="stats"><span>' + dice + '</span><span>Bases <b>' + p.reserve + '</b> reserva · <b>' + basesOnBoard(p) + '</b> en mesa</span><span>' + pw + '</span></div>' +
+        '</div>';
+    }).join('');
+  }
+
+  function renderPrompt() {
+    var el = $('prompt'), p = S.cur, html = '';
+    el.style.setProperty('--pc', p ? HEX[p.color] : 'var(--morado)');
+    var who = p ? '<b>' + NAMES[p.color] + '</b>' : '';
+    if (S.phase === 'aim') {
+      if (isHuman(p)) {
+        html = '<div class="msg">' + (S.rethrow ? 'Relanzamiento de ' + who + '. ' : 'Turno de ' + who + (S.double ? ' (doble lanzamiento)' : '') + '. ') + 'Presiona sobre tu franja de color y arrastra hacia donde quieres lanzar.</div>';
+        if (p.color === 'rojo' && p.extrasLeft > 0) {
+          var last = p.extrasLeft >= p.diceLeft;
+          html += S.double
+            ? '<button class="btn" id="dblBtn" type="button" aria-pressed="true">2 dados confirmados ✓</button>'
+            : '<button class="btn' + (last ? '' : ' alt') + '" id="dblBtn" type="button" aria-pressed="false">Usar 2 dados este turno · quedan ' + p.extrasLeft + (last ? ' (si no, se pierde)' : '') + '</button>';
+        }
+      } else html = '<div class="msg">' + who + (S.rethrow ? ' relanza un dado…' : S.double ? ' prepara un doble lanzamiento…' : ' está apuntando…') + '</div>';
+    } else if (S.phase === 'moving' || S.phase === 'settling') {
+      html = '<div class="msg">' + who + ' lanza…</div>';
+    } else if (S.phase === 'power') {
+      if (isHuman(p)) {
+        var what = p.color === 'azul' ? 'Toca un planeta para poner un dado blanco. Ese planeta no da puntos a nadie mientras siga ahí; si lo sacan, lo recuperas al terminar la ronda.'
+          : p.color === 'verde' ? 'Toca un planeta para poner un cubito morado. Si sigue ahí al final de la ronda, ganas una base.'
+          : p.color === 'rojo' ? 'Toca un planeta para poner una antorcha. Mientras siga ahí, ese planeta es tu favorito: +1 si tienes bases ahí.'
+          : (S.kinStep === 'down' ? 'Ahora toca una base enemiga para bajarla un nivel.' : 'Toca una de tus bases para subirla un nivel; después eliges una base enemiga para bajarla.');
+        html = '<div class="msg">¡POW! ' + who + ': ' + what + '</div><button class="btn alt" id="skipPow" type="button">No usar</button>';
+      } else html = '<div class="msg">¡POW! ' + who + ' usa su poder…</div>';
+    } else if (S.phase === 'build') html = '<div class="msg">Fin de los lanzamientos: construcción.</div>';
+    else if (S.phase === 'score') html = '<div class="msg">Puntuación.</div>';
+    else if (S.phase === 'shop') html = '<div class="msg">Compras.</div>';
+    else if (S.phase === 'over') html = '<div class="msg">Partida terminada.</div><button class="btn" id="againBtn" type="button">Nueva partida</button>';
+    el.innerHTML = html;
+    var sk = $('skipPow'); if (sk) sk.addEventListener('click', function () { log(NAMES[p.color] + ' no usa su poder.'); finishPower(null); });
+    var db = $('dblBtn'); if (db) db.addEventListener('click', function () { S.double = !S.double; renderPrompt(); });
+    var ag = $('againBtn'); if (ag) ag.addEventListener('click', function () { clearTimers(); showSetup(); });
+  }
+
+  function renderLog() {
+    $('log').innerHTML = S.log.map(function (l) { return l.title ? '<div class="t">' + esc(l.msg) + '</div>' : '<div>' + esc(l.msg) + '</div>'; }).join('');
+  }
+
+  // ---------- Configuración ----------
+  function renderSetup() {
+    $('seats').innerHTML = COLORS.map(function (c) {
+      var desc = 'Favorito ' + PLANET[c] + ' · ' + { azul: 'Dados blancos: bloquean un planeta', verde: 'Cubitos morados: bases sin dados', amarillo: 'Sube una base suya y baja una enemiga', rojo: 'Antorchas: hacen de un planeta su favorito' }[c];
+      var opts = [['human', 'Persona'], ['bot', 'Computadora'], ['off', 'No juega']].map(function (o) {
+        return '<button type="button" data-seat="' + c + '" data-v="' + o[0] + '" aria-pressed="' + (seatCfg[c] === o[0]) + '">' + o[1] + '</button>';
+      }).join('');
+      return '<div class="seat" style="--c:' + HEX[c] + '"><span class="chip"></span><span class="lb">' + NAMES[c] + '<small>' + desc + '</small></span><div class="seg">' + opts + '</div></div>';
+    }).join('');
+    document.querySelectorAll('[data-seat]').forEach(function (b) {
+      b.addEventListener('click', function () { seatCfg[b.getAttribute('data-seat')] = b.getAttribute('data-v'); renderSetup(); });
+    });
+    var n = COLORS.filter(function (c) { return seatCfg[c] !== 'off'; }).length;
+    $('setupErr').textContent = n < 2 ? 'Se necesitan al menos 2 colores en la mesa.' : '';
+    $('startBtn').disabled = n < 2;
+  }
+
+  function showSetup() {
+    hideOverlay();
+    S = null;
+    $('game').hidden = true;
+    $('setup').hidden = false;
+    renderSetup();
+  }
+
+  // ---------- Reglas ----------
+  var RULES_SHORT =
+    '<h3>Cómo se juega</h3><ol>' +
+    '<li>Cada ronda lanzas tus <b>3 dados de a uno</b>, por turnos. El dado cuenta solo si queda <b>entero encima de un planeta</b>. Puedes chocar y empujar otros dados.</li>' +
+    '<li>Si tu dado sale <b>par</b> (2, 4 o 6), usas tu poder, caiga donde caiga.</li>' +
+    '<li>Al final de la ronda: las bases que aguantaron <b>suben un nivel</b> (máximo 4), cada dado sobre un planeta pasa a ser una <b>base de nivel 1</b> y cada base da <b>tantos puntos como su nivel</b>. Si tienes bases en tu planeta favorito, ganas <b>+1</b> (una vez, no por base).</li>' +
+    '<li>Compras: base o pieza de poder por <b>2 puntos</b>.</li>' +
+    '<li>Gana quien llega primero a <b>30 puntos</b>.</li></ol>';
+  var RULES_FULL =
+    '<p class="eyebrow">Reglas</p><h2>Invasión de Dados</h2>' +
+    '<p>2 a 4 jugadores · desde 8 años · 20 a 30 minutos. Cada jugador empieza con 1 punto, 3 dados de 6 caras, 2 bases (cubitos de su color con los niveles 1 a 4) y su poder.</p>' +
+    '<h3>Planetas</h3><p>Hay 6 planetas: Bosque, Arcilla, Montaña, Trigo y 2 Valles. Cada color tiene un planeta favorito: rojo Arcilla, azul Montaña, amarillo Trigo y verde Bosque. Los Valles no son favoritos de nadie.</p>' +
+    '<h3>Turno</h3><ol>' +
+    '<li>En tu turno lanzas <b>un solo dado</b> desde tu borde de la mesa y le toca al jugador siguiente. La ronda sigue hasta que todos lanzaron sus 3 dados.</li>' +
+    '<li>Tu dado cuenta si queda <b>entero encima de un planeta</b>. Si toca la mesa, está afuera.</li>' +
+    '<li>Puedes chocar y empujar dados, bases y piezas de poder. Una base que queda fuera de su planeta vuelve a tu reserva y pierde su nivel.</li>' +
+    '<li>Si tu dado sale <b>par</b> (2, 4 o 6) puedes usar tu poder. No importa si cayó encima de un planeta.</li></ol>' +
+    '<h3>Poderes</h3><ol>' +
+    '<li><b>Rojo · Antorchas.</b> Con par pone una antorcha en un planeta: mientras siga ahí, ese planeta cuenta como su favorito: si tiene bases ahí, gana +1. Se puede empujar; si la sacan de los planetas, vuelve al rojo. Parte con 1 y puede comprar 2 más.</li>' +
+    '<li><b>Azul · Dados blancos.</b> Con par pone 1 dado blanco en cualquier planeta: ese planeta no da puntos a nadie mientras siga ahí. Se queda en la mesa (no se puede cambiar de planeta). Si lo sacan de los planetas de un empujón, el azul no lo puede usar hasta que termine la ronda. Parte con 1 y puede comprar 2 más.</li>' +
+    '<li><b>Amarillo · Subir y bajar</b> (en prueba). Sube un nivel una de sus bases (máximo 4) y baja un nivel una base enemiga (mínimo 1). Parte con 1 carga y puede comprar 2 más: cada carga se usa una vez por ronda.</li>' +
+    '<li><b>Verde · Cubitos morados.</b> Pone un cubito morado en cualquier planeta. Si sigue ahí al final de la ronda, se convierte en una base del verde.</li></ol>' +
+    '<h3>Fin de ronda</h3><ol>' +
+    '<li><b>Subir de nivel:</b> las bases que aguantaron en su planeta suben un nivel (máximo 4).</li>' +
+    '<li><b>Poner bases:</b> se retiran los dados y en cada planeta donde quedó un dado tuyo (o un cubito morado) pones una base de nivel 1, si te quedan.</li>' +
+    '<li><b>Puntuar:</b> cada base da tantos puntos como su nivel. Si tienes bases en tu planeta favorito, ganas +1 una sola vez, tengas las bases que tengas ahí (para el rojo, también en cada planeta donde tenga una antorcha). Un planeta con dado blanco no da puntos.</li>' +
+    '<li><b>Comprar:</b> una base (máximo 6) o una pieza más de tu poder, por 2 puntos cada una.</li>' +
+    '<li>Los dados blancos que le sacaron al azul en la ronda vuelven a estar disponibles.</li></ol>' +
+    '<h3>Fin del juego</h3><p>Gana el primero que llega a <b>30 puntos</b>. Si varios pasan los 30 en la misma ronda, gana el que tenga más puntos; si empatan, quien tenga la base de nivel más alto.</p>';
+
+  function showRules() {
+    if ($('game').hidden) {
+      // En la pantalla inicial no hay mesa: mostramos las reglas en una ventana sobre todo.
+      var box = document.createElement('div');
+      box.className = 'overlay'; box.style.position = 'fixed'; box.style.zIndex = 10;
+      box.innerHTML = '<div class="card rules">' + RULES_FULL + '<div class="actions"><button class="btn" type="button">Entendido</button></div></div>';
+      box.querySelector('button').addEventListener('click', function () { box.remove(); });
+      document.body.appendChild(box);
+      return;
+    }
+    var box2 = document.createElement('div');
+    box2.className = 'overlay'; box2.style.zIndex = 5;
+    box2.innerHTML = '<div class="card rules">' + RULES_FULL + '<div class="actions"><button class="btn" type="button">Volver a la mesa</button></div></div>';
+    box2.querySelector('button').addEventListener('click', function () { box2.remove(); });
+    $('boardwrap').appendChild(box2);
+  }
+  $('rulesShort').innerHTML = RULES_SHORT + '<p style="margin:10px 0 0"><button class="btn alt" id="rulesBtn2" type="button">Reglas completas</button></p>';
+  $('rulesBtn2').addEventListener('click', showRules);
+  $('rulesBtn').addEventListener('click', showRules);
+
+  $('startBtn').addEventListener('click', newGame);
+  $('quitBtn').addEventListener('click', function () { clearTimers(); showSetup(); });
+  renderSetup();
+
+  // Para pruebas automáticas.
+  window.__idd = { get state() { return S; }, newGame: newGame, seatCfg: seatCfg };
+})();
+</script>
+</body>
+</html>
